@@ -9,21 +9,35 @@ if "messages" not in st.session_state:
 if "thread_id" not in st.session_state:
     st.session_state["thread_id"] = None
 
-cols = st.columns([1, 1, 6])
+def _do_reset_chat():
+    """Reset chat on the server and clear local messages."""
+    try:
+        payload = {"thread_id": st.session_state.thread_id} if st.session_state.thread_id else {}
+        resp = requests.post("http://localhost:8000/chat/reset", json=payload)
+        if resp.ok:
+            data = resp.json()
+            st.session_state.thread_id = data.get("thread_id")
+            st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+            st.toast("Started a new conversation thread.")
+        else:
+            st.warning("Failed to reset chat on server.")
+    except Exception as e:
+        st.error(f"Reset error: {e}")
+
+
+cols = st.columns([2, 1, 6])
 with cols[0]:
-    if st.button("Reset chat", use_container_width=True):
-        try:
-            payload = {"thread_id": st.session_state.thread_id} if st.session_state.thread_id else {}
-            resp = requests.post("http://localhost:8000/chat/reset", json=payload)
-            if resp.ok:
-                data = resp.json()
-                st.session_state.thread_id = data.get("thread_id")
-                st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
-                st.success("Chat reset. Started a new conversation thread.")
-            else:
-                st.warning("Failed to reset chat on server.")
-        except Exception as e:
-            st.error(f"Reset error: {e}")
+    # Use non-breaking spaces to keep the label on one line: "| reset chat |"
+    with st.popover("reset chat"):
+        st.markdown("### Start a new chat?")
+        st.caption("This will reset the server thread and clear the conversation history.")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Confirm", type="primary", use_container_width=True, key="confirm_reset"):
+                with st.spinner("Resetting chat…"):
+                    _do_reset_chat()
+        with c2:
+            st.button("Cancel", use_container_width=True, key="cancel_reset")
 
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
