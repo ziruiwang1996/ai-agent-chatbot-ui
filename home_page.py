@@ -4,6 +4,7 @@ import json
 st.title("💬 Research Agent Chatbot")
 st.caption("📝 Agent server will spin down with inactivity, which can delay requests by 50 seconds or more")
 st.caption("🚀 Model Context Protocol–compliant chatbot, powered by Gemini")
+st.caption("🔨 Ask me tools I can use to help you with your research.")
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
 if "thread_id" not in st.session_state:
@@ -13,7 +14,7 @@ def _do_reset_chat():
     """Reset chat on the server and clear local messages."""
     try:
         payload = {"thread_id": st.session_state.thread_id} if st.session_state.thread_id else {}
-        resp = requests.post("http://localhost:8000/chat/reset", json=payload)
+        resp = requests.post("https://ai-agent-latest-xo5b.onrender.com/chat/reset", json=payload)
         if resp.ok:
             data = resp.json()
             st.session_state.thread_id = data.get("thread_id")
@@ -63,7 +64,7 @@ if prompt := st.chat_input():
                 payload["thread_id"] = st.session_state.thread_id
 
             response = requests.post(
-                "http://localhost:8000/chat/stream",
+                "https://ai-agent-latest-xo5b.onrender.com/chat/stream",
                 json=payload,
                 stream=True
             )
